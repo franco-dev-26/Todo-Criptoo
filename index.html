@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cripto en vivo — Vanilla</title>
+  <link href="styles.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <div class="header__title">
+      <h1>Cripto en vivo</h1>
+      <p>Datos por <a href="https://binance-docs.github.io/apidocs/spot/en/#individual-symbol-ticker-streams" target="_blank" rel="noreferrer">Binance WebSocket</a> • sin API key</p>
+    </div>
+    <div class="header__controls">
+      <input id="symbol-input" type="text" placeholder="Agregar símbolo (ej: ada, doge, arb)" />
+      <button id="add-btn" class="btn">Agregar</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="grid" class="grid"></div>
+    <p id="empty-hint" class="empty">Sin símbolos. Agregá alguno arriba ☝️</p>
+  </main>
+
+  <footer class="footer">
+    <small>Tip: los símbolos usan sufijo USDT. Ej: BTC, ETH, SOL ⇒ btcusdt, ethusdt, solusdt.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
