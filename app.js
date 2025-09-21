@@ -1,3 +1,14 @@
+// ====== Guard rails: mostrar errores en la UI ======
+window.addEventListener('error', (e) => {
+  const status = document.getElementById('status');
+  if (status) status.textContent = 'Error JS: ' + (e.message || 'desconocido');
+  console.error('JS Error:', e.error || e.message, e.filename, e.lineno);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const status = document.getElementById('status');
+  if (status) status.textContent = 'Error Promesa: ' + (e.reason?.message || e.reason || 'desconocido');
+  console.error('Promise Error:', e.reason);
+});
 
 // ====== DOM ======
 const grid = document.getElementById('grid');
@@ -39,6 +50,11 @@ let fxRates = JSON.parse(localStorage.getItem('fxRates')||'{"USD":1,"EUR":1,"ARS
 let fxOverride = Number(localStorage.getItem('fxOverrideARS')||'0');
 let pollTimer = null;
 
+// Auto selección de modo: preferimos WS (más estable en vivo) y si falla, REST
+let LIVE_MODE = localStorage.getItem('live_mode') || 'WS';
+let ws = null;
+let wsRetryTimer = null;
+
 // ====== Utils ======
 function saveAll(){ localStorage.setItem('symbols', JSON.stringify(symbols));
   localStorage.setItem('alerts', JSON.stringify(alerts));
@@ -46,6 +62,7 @@ function saveAll(){ localStorage.setItem('symbols', JSON.stringify(symbols));
   localStorage.setItem('muted', JSON.stringify(muted));
   localStorage.setItem('fxRates', JSON.stringify(fxRates));
   localStorage.setItem('fxOverrideARS', fxOverride||0);
+  localStorage.setItem('live_mode', LIVE_MODE);
 }
 function fmtPrice(n){ if(n==null||isNaN(n)) return '—'; const v=Number(n);
   if(v>=100000) return v.toLocaleString(undefined,{maximumFractionDigits:0});
@@ -56,6 +73,10 @@ function fmtPrice(n){ if(n==null||isNaN(n)) return '—'; const v=Number(n);
 function ensureUI(){ emptyHint.style.display = symbols.length ? 'none':'block';
   soundBtn.textContent = muted ? 'Sonido Off' : 'Sonido On';
   fxBadge.textContent = `FX · ARS ${fxRates.ARS.toFixed(2)} · EUR ${fxRates.EUR.toFixed(2)}`;
+  const modeTxt = LIVE_MODE === 'WS' ? 'En vivo (WS)' : 'En vivo (REST)';
+  if (statusBox.textContent.startsWith('Inicializado') || statusBox.textContent.startsWith('En vivo')) {
+    statusBox.textContent = modeTxt;
+  }
 }
 function fromUSD(amount, fiat){ if(fiat==='USD') return amount; if(fiat==='ARS' && fxOverride>0) return amount*fxOverride; return amount*(fxRates[fiat]||1); }
 function toUSD(amount, fiat){ if(fiat==='USD') return amount; const rate=(fiat==='ARS'&&fxOverride>0)?fxOverride:(fxRates[fiat]||1); return amount/(rate||1); }
@@ -89,6 +110,12 @@ async function pollPrices(){
     }catch(e){}
   }
   statusBox.textContent = ok ? 'En vivo (REST)' : 'REST: error';
+  if(!ok){
+    // Si REST falla, probamos WS
+    if (LIVE_MODE !== 'WS') {
+      LIVE_MODE = 'WS'; saveAll(); connectWS(true);
+    }
+  }
 }
 
 function ingestTicker(m){
@@ -102,8 +129,9 @@ function ingestTicker(m){
   // KPIs
   if(sym==='btcusdt') kpiBTC.textContent = Number(m.volume||0).toLocaleString();
   if(sym==='ethusdt') kpiETH.textContent = Number(m.volume||0).toLocaleString();
-  // flash
+  // Alertas + flash
   const card = document.querySelector(`[data-sym="${sym}"]`);
+  checkAlerts(sym, price);
   if(card){ const last = lastPrices[sym]; lastPrices[sym]=price; if(last!=null) flash(card, price>last); }
 }
 
@@ -178,10 +206,13 @@ function mount(sym){
 
 function addSymbol(raw){ const s=(raw||input.value).trim().toLowerCase(); if(!s) return;
   const normalized=s.endsWith('usdt')?s:`${s}usdt`; if(!symbols.includes(normalized)){
-    symbols.push(normalized); saveAll(); ensureUI(); mount(normalized); pollPrices();
+    symbols.push(normalized); saveAll(); ensureUI(); mount(normalized);
+    // Re-conectar segun modo
+    if (LIVE_MODE === 'WS') connectWS(true); else pollPrices();
   } input.value=''; }
 function removeSymbol(sym){ symbols=symbols.filter(x=>x!==sym); delete state[sym]; delete alerts[sym]; saveAll();
-  const el=document.querySelector(`[data-sym="${sym}"]`); if(el) el.remove(); ensureUI(); }
+  const el=document.querySelector(`[data-sym="${sym}"]`); if(el) el.remove(); ensureUI();
+  if (LIVE_MODE === 'WS') connectWS(true); }
 function toggleFavorite(sym, btn){ if(favorites.includes(sym)) favorites=favorites.filter(x=>x!==sym); else favorites.push(sym);
   if(btn) btn.textContent=favorites.includes(sym)?'★':'☆'; saveAll(); renderFavorites(); }
 function promptAlert(sym){
@@ -199,7 +230,7 @@ function checkAlerts(sym, priceUSD){ const targetUSD=alerts[sym]; if(!targetUSD)
 async function loadComparators(sym){
   const el = document.querySelector(`[data-sym="${sym}"] [data-el="cmp"]`);
   const base = sym.replace('usdt','').toUpperCase(); const out = [];
-  try{ const r1 = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${base}USDT`); const j1 = await r1.json(); out.push(`Binance: ${fmtPrice(Number(j1.price))} USDT`);}catch(e){}
+  try{ const r1 = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${base}USDT`); const j1 = await r1.json(); if(j1?.price) out.push(`Binance: ${fmtPrice(Number(j1.price))} USDT`);}catch(e){}
   try{ const r2 = await fetch(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${base}-USDT`); const j2 = await r2.json(); const p2 = Number(j2?.data?.price); if(p2) out.push(`KuCoin: ${fmtPrice(p2)} USDT`);}catch(e){}
   try{ const krPair = base==='BTC'?'XXBTZUSD': base==='ETH'?'XETHZUSD': `${base}USD`; const r3 = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${krPair}`); const j3 = await r3.json(); const firstKey = Object.keys(j3.result||{})[0]; const p3 = Number(j3.result?.[firstKey]?.c?.[0]); if(p3) out.push(`Kraken: ${fmtPrice(p3)} USD`);}catch(e){}
   el.textContent = out.join(' · ');
@@ -229,29 +260,94 @@ function renderFavorites(){
   });
 }
 
-// ====== Dialog helpers (para navegadores viejos) ======
+// ====== Dialog helpers ======
 function showDialog(d){ if(d.showModal) d.showModal(); else d.style.display='block'; }
 function hideDialog(d){ if(d.close) d.close(); else d.style.display='none'; }
 
+// ====== WebSocket Live ======
+function connectWS(force=false){
+  if(!symbols.length){ statusBox.textContent='Sin símbolos'; return; }
+  const streams = symbols.map(s => `${s}@ticker`).join('/');
+  const url = `wss://stream.binance.com:9443/stream?streams=${streams}`;
+  try{ if (ws) { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; ws.close(); } }catch(e){}
+  if (wsRetryTimer) { clearTimeout(wsRetryTimer); wsRetryTimer = null; }
+  LIVE_MODE = 'WS'; saveAll();
+  statusBox.textContent='Conectando WS…';
+  ws = new WebSocket(url);
+  ws.onopen = () => { statusBox.textContent='En vivo (WS)'; };
+  ws.onmessage = (ev) => {
+    try{
+      const payload = JSON.parse(ev.data);
+      const m = payload.data || payload;
+      if(!m || !m.s) return;
+      ingestTicker({
+        symbol: m.s,
+        lastPrice: m.c,
+        priceChangePercent: m.P,
+        highPrice: m.h,
+        lowPrice: m.l,
+        volume: m.v
+      });
+    }catch(e){}
+  };
+  ws.onerror = () => { /* manejado por close */ };
+  ws.onclose = () => {
+    statusBox.textContent='WS: desconectado, reintentando…';
+    wsRetryTimer = setTimeout(()=>{
+      // Si WS falla varias veces, hacemos fallback a REST
+      if (force) connectWS(false);
+      else {
+        LIVE_MODE = 'REST'; saveAll();
+        startREST();
+      }
+    }, 1500);
+  };
+}
+
+// ====== REST Live ======
+function startREST(){
+  if(pollTimer) clearInterval(pollTimer);
+  statusBox.textContent='Inicializado (REST)…';
+  pollPrices();
+  pollTimer = setInterval(pollPrices, 2000);
+}
+
 // ====== Events ======
-addBtn.addEventListener('click',()=>addSymbol());
-input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addSymbol(); });
-themeBtn.addEventListener('click',()=>{ const html=document.documentElement; const next=html.getAttribute('data-theme')==='dark'?'light':'dark'; html.setAttribute('data-theme',next); localStorage.setItem('theme',next); });
-reconnectBtn.addEventListener('click',()=>{ pollPrices(); });
-soundBtn.addEventListener('click',()=>{ muted=!muted; saveAll(); ensureUI(); if(!muted){ try{ beep.currentTime=0; beep.play(); }catch(e){} } });
-favBtn.addEventListener('click',()=>{ renderFavorites(); showDialog(favModal); });
-favClose.addEventListener('click',()=>hideDialog(favModal));
-filterInput.addEventListener('input',()=>{ const q=filterInput.value.trim().toLowerCase(); document.querySelectorAll('.card').forEach(el=>{ const sym=el.dataset.sym; el.style.display = sym.includes(q)?'':'none'; }); });
-fiatSel.addEventListener('change',()=>{ const fiat=fiatSel.value; if(fiat!=='USD' && ((fiat==='ARS' && !fxOverride && (!fxRates.ARS || fxRates.ARS===1)) || (fiat==='EUR' && (!fxRates.EUR || fxRates.EUR===1)))){ loadFX(); } refreshAll(); });
-fxEditBtn.addEventListener('click',()=>{ fxInput.value = fxOverride || fxRates.ARS || 0; showDialog(fxModal); });
-fxClose.addEventListener('click',()=>hideDialog(fxModal));
-fxReset.addEventListener('click',()=>{ fxOverride=0; saveAll(); hideDialog(fxModal); ensureUI(); refreshAll(); });
-fxSave.addEventListener('click',()=>{ const v=Number(fxInput.value); if(!isNaN(v) && v>0){ fxOverride=v; saveAll(); hideDialog(fxModal); ensureUI(); refreshAll(); }});
+function wireEvents(){
+  addBtn.addEventListener('click',()=>addSymbol());
+  input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addSymbol(); });
+  themeBtn.addEventListener('click',()=>{ const html=document.documentElement; const next=html.getAttribute('data-theme')==='dark'?'light':'dark'; html.setAttribute('data-theme',next); localStorage.setItem('theme',next); });
+  reconnectBtn.addEventListener('click',()=>{
+    if (LIVE_MODE === 'WS') connectWS(true);
+    else { startREST(); }
+  });
+  soundBtn.addEventListener('click',()=>{ muted=!muted; saveAll(); ensureUI(); if(!muted){ try{ beep.currentTime=0; beep.play(); }catch(e){} } });
+  favBtn.addEventListener('click',()=>{ renderFavorites(); showDialog(favModal); });
+  favClose.addEventListener('click',()=>hideDialog(favModal));
+  filterInput.addEventListener('input',()=>{ const q=filterInput.value.trim().toLowerCase(); document.querySelectorAll('.card').forEach(el=>{ const sym=el.dataset.sym; el.style.display = sym.includes(q)?'':'none'; }); });
+  fiatSel.addEventListener('change',()=>{ const fiat=fiatSel.value; if(fiat!=='USD' && ((fiat==='ARS' && !fxOverride && (!fxRates.ARS || fxRates.ARS===1)) || (fiat==='EUR' && (!fxRates.EUR || fxRates.EUR===1)))){ loadFX(); } refreshAll(); });
+  fxEditBtn.addEventListener('click',()=>{ fxInput.value = fxOverride || fxRates.ARS || 0; showDialog(fxModal); });
+  fxClose.addEventListener('click',()=>hideDialog(fxModal));
+  fxReset.addEventListener('click',()=>{ fxOverride=0; saveAll(); hideDialog(fxModal); ensureUI(); refreshAll(); });
+  fxSave.addEventListener('click',()=>{ const v=Number(fxInput.value); if(!isNaN(v) && v>0){ fxOverride=v; saveAll(); hideDialog(fxModal); ensureUI(); refreshAll(); }});
+}
 
 // ====== Boot ======
-(function boot(){
-  const theme = localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme', theme);
-  ensureUI(); symbols.forEach(mount); loadFX();
-  pollPrices(); if(pollTimer) clearInterval(pollTimer); pollTimer = setInterval(pollPrices, 2000);
-  // Beep de confirmación en la primera interacción de sonido
-})();
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const theme = localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme', theme);
+    ensureUI(); symbols.forEach(mount); loadFX();
+    wireEvents();
+
+    // Intento WS primero; si falla, REST
+    if (LIVE_MODE === 'WS') connectWS(true);
+    else startREST();
+
+    const status = document.getElementById('status');
+    if (status && !status.textContent) status.textContent = 'Inicializado…';
+  } catch (e) {
+    const status = document.getElementById('status');
+    if (status) status.textContent = 'Fallo al iniciar: ' + e.message;
+    console.error(e);
+  }
+});
