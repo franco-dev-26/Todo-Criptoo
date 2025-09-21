@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cripto Studio — Comfort</title>
+  <link href="styles.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="nav">
+    <div class="nav__left">
+      <div class="logo">₿</div>
+      <div class="brand">
+        <h1>Cripto Studio</h1>
+        <span class="sub">Precios en vivo</span>
+      </div>
+    </div>
+    <div class="nav__right">
+      <button id="theme-btn" class="btn btn--ghost">Tema</button>
+      <button id="fav-btn" class="btn btn--ghost">Favoritos</button>
+    </div>
+  </header>
+
+  <section class="toolbar">
+    <div class="row">
+      <div class="group">
+        <input id="symbol-input" class="input" type="text" placeholder="Agregar símbolo (ej: ada, doge, arb)">
+        <button id="add-btn" class="btn btn--primary">Agregar</button>
+      </div>
+      <div class="group">
+        <input id="filter-input" class="input" type="text" placeholder="Filtrar símbolos…">
+        <select id="fiat" class="select">
+          <option value="USD" selected>USD</option>
+          <option value="EUR">EUR</option>
+          <option value="ARS">ARS</option>
+        </select>
+        <button id="sound-btn" class="btn btn--ghost">Sonido</button>
+      </div>
+    </div>
+    <div class="row meta">
+      <span>Fuente: Binance WebSocket · Comparador: Binance · KuCoin · Kraken</span>
+      <span id="status" class="status">Conectando…</span>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="kpis">
+      <div class="kpi"><div class="kpi__label">BTC 24h Vol (Binance)</div><div id="kpi-btc-vol" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">ETH 24h Vol (Binance)</div><div id="kpi-eth-vol" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">Fear & Greed</div><div id="kpi-fng" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">1 USD en</div><div id="fx" class="kpi__value">—</div></div>
+    </section>
+
+    <section class="panel">
+      <div id="grid" class="grid"></div>
+      <p id="empty-hint" class="empty">Sin símbolos. Agregá alguno arriba.</p>
+    </section>
+  </main>
+
+  <dialog id="fav-modal" class="modal">
+    <div class="modal__box">
+      <div class="modal__head">
+        <h3>Tus favoritos</h3>
+        <button id="fav-close" class="modal__close">✕</button>
+      </div>
+      <div id="fav-list" class="fav-list"></div>
+    </div>
+  </dialog>
+
+  <audio id="beep" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAACAAACAgAA" preload="auto"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
