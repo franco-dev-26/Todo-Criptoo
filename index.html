@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cripto Pro — Tiempo Real</title>
+  <link href="styles.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="nav">
+    <div class="brand">
+      <div class="brand__logo">₿</div>
+      <div class="brand__name">Cripto Pro</div>
+    </div>
+    <div class="actions">
+      <input id="symbol-input" type="text" placeholder="Agregar símbolo (ej: ada, doge, arb)">
+      <button id="add-btn" class="btn">Agregar</button>
+      <button id="fav-btn" class="btn btn--ghost">Favoritos</button>
+      <button id="theme-btn" class="btn btn--ghost">Tema</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panel__meta">
+        <span>Fuente: <a href="https://binance-docs.github.io/apidocs/spot/en/#individual-symbol-ticker-streams" target="_blank" rel="noreferrer">Binance WebSocket</a></span>
+        <span>Comparador: Binance · Kraken · KuCoin</span>
+        <span>Datos extra: CoinGecko · Fear&Greed</span>
+      </div>
+
+      <section class="kpis">
+        <div class="kpi"><div class="kpi__label">BTC Volumen 24h (Binance)</div><div id="kpi-btc-vol" class="kpi__value">—</div></div>
+        <div class="kpi"><div class="kpi__label">ETH Volumen 24h (Binance)</div><div id="kpi-eth-vol" class="kpi__value">—</div></div>
+        <div class="kpi"><div class="kpi__label">Fear & Greed</div><div id="kpi-fng" class="kpi__value">—</div></div>
+      </section>
+
+      <div id="grid" class="grid"></div>
+      <p id="empty-hint" class="empty">Sin símbolos. Agregá alguno arriba.</p>
+
+      <section class="movers">
+        <div class="movers__head">
+          <h2>Top Movers 24h</h2>
+          <div class="tabs">
+            <button data-period="24h" class="tab tab--active">24h</button>
+            <button data-period="7d" class="tab">7d</button>
+          </div>
+        </div>
+        <div id="movers-list" class="movers__list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="fav-modal" class="modal">
+    <div class="modal__box">
+      <div class="modal__head">
+        <h3>Favoritos</h3>
+        <button id="fav-close" class="modal__close">✕</button>
+      </div>
+      <div id="fav-list" class="fav-list"></div>
+    </div>
+  </dialog>
+
+  <audio id="beep" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAACAAACAgAA" preload="auto"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
