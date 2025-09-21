@@ -1,4 +1,3 @@
-// ===== MINI APP JS (simple, corto y estable) =====
 document.addEventListener('DOMContentLoaded', () => {
   // DOM
   const grid = document.getElementById('grid');
@@ -16,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Estado
   let symbols = JSON.parse(localStorage.getItem('symbols')||'[]');
   if(!symbols.length) symbols = ['btcusdt','ethusdt','solusdt'];
-  let state = {};
+  let state = {};       // { sym: {c,P,h,l,v} }
+  let sparks = {};      // { sym: [closes...] }
   let timer = null;
+  let sparkTimer = null;
   let fx = { USD:1, EUR:1, ARS:1 };
 
   // Utils
@@ -33,6 +34,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return usd*rate;
   };
 
+  // Sparkline
+  async function loadSpark(sym){
+    try{
+      const url = `https://data-api.binance.vision/api/v3/klines?symbol=${sym.toUpperCase()}&interval=1m&limit=60`;
+      const r = await fetch(url);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const rows = await r.json();
+      sparks[sym] = rows.map(row => Number(row[4])); // cierres
+      drawSpark(sym);
+    }catch(e){
+      // Silencioso; si falla, seguimos sin spark
+    }
+  }
+  function drawSpark(sym){
+    const el = document.querySelector(`[data-sym="${sym}"] [data-el="spark"]`);
+    if(!el || !sparks[sym]?.length) return;
+    const data = sparks[sym];
+    const w = el.width = el.clientWidth || 160;
+    const h = el.height = el.clientHeight || 46;
+    const ctx = el.getContext('2d');
+    ctx.clearRect(0,0,w,h);
+    const min = Math.min(...data), max = Math.max(...data);
+    const span = (max-min) || 1;
+    // línea
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const x = (i/(data.length-1))*w;
+      const y = h - ((v-min)/span)*h;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = data.at(-1) >= data[0] ? '#16a34a' : '#dc2626'; // verde/rojo
+    ctx.stroke();
+  }
+
   // UI
   function ensureUI(){
     emptyHint.style.display = symbols.length ? 'none' : 'block';
@@ -46,11 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
     el.className='card'; el.dataset.sym=sym;
     el.innerHTML = `
       <div class="card__head">
-        <div><div class="card__meta">BINANCE • 24H</div><div class="card__sym">${sym.toUpperCase()}</div></div>
-        <div class="card__actions"><button data-act="remove" class="card__remove" title="Quitar">✕</button></div>
+        <div>
+          <div class="card__meta">BINANCE • 24H</div>
+          <div class="card__sym">${sym.toUpperCase()}</div>
+        </div>
+        <div class="card__actions">
+          <button data-act="remove" class="card__remove" title="Quitar">✕</button>
+        </div>
       </div>
-      <div class="card__price"><div class="price" data-el="price">—</div><div class="badge" data-el="chg">—</div></div>
+      <div class="card__price">
+        <div class="price" data-el="price">—</div>
+        <div class="badge" data-el="chg">—</div>
+      </div>
       <div class="card__stats">
+        <canvas class="spark" data-el="spark"></canvas>
         <div class="stats">
           <div>24h Alto: <b data-el="high">—</b></div>
           <div>24h Bajo: <b data-el="low">—</b></div>
@@ -61,6 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
       symbols = symbols.filter(x=>x!==sym); save(); el.remove(); ensureUI();
     });
     grid.appendChild(el);
+    // carga spark inicial
+    loadSpark(sym);
   }
 
   function render(sym){
@@ -74,6 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
     el.querySelector('[data-el="high"]').textContent = fmt(fromUSD(+m.h));
     el.querySelector('[data-el="low"]').textContent  = fmt(fromUSD(+m.l));
     el.querySelector('[data-el="vol"]').textContent  = isNaN(+m.v)?'—':Number(m.v).toLocaleString();
+    // redibujar spark si existe (por tamaño responsivo)
+    drawSpark(sym);
   }
 
   // Datos: REST binance.vision (CORS OK)
@@ -115,10 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
     input.value='';
   });
   input.addEventListener('keydown',e=>{ if(e.key==='Enter') addBtn.click(); });
-  reconnectBtn.addEventListener('click',()=>tick());
+  reconnectBtn.addEventListener('click',()=>{ tick(); symbols.forEach(loadSpark); });
   themeBtn.addEventListener('click',()=>{
     const html=document.documentElement; const next=html.getAttribute('data-theme')==='dark'?'light':'dark';
     html.setAttribute('data-theme',next); localStorage.setItem('theme',next);
+    // redibuja sparks por cambio de contraste
+    symbols.forEach(drawSpark);
   });
   filterInput.addEventListener('input',()=>{
     const q=filterInput.value.trim().toLowerCase();
@@ -137,7 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFX();            // cambio EUR/ARS
     tick();              // primera carga
     if (timer) clearInterval(timer);
-    timer = setInterval(tick, 3000); // cada 3s
+    timer = setInterval(tick, 3000);     // precios
+    if (sparkTimer) clearInterval(sparkTimer);
+    sparkTimer = setInterval(()=>symbols.forEach(loadSpark), 60000); // spark cada 60s
     statusBox.textContent = 'Inicializado…';
   }catch(e){
     statusBox.textContent = 'Fallo al iniciar: ' + e.message;
