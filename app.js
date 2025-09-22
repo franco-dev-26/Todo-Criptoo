@@ -25,9 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => (n==null||isNaN(n))?'—':(+n>=100000?nf0:(+n>=1000?nf2:(+n>=1?nf4:nf8))).format(+n)
   const fromUSD = usd => { const cur = fiatSel.value||'USD'; const r = cur==='ARS'?fx.ARS:cur==='EUR'?fx.EUR:1; return usd*r }
 
-  function ensureUI(){
-    empty.style.display = symbols.length ? 'none' : 'block'
-  }
+  function ensureUI(){ empty.style.display = symbols.length ? 'none' : 'block' }
 
   function scaleCanvas(c){
     const dpr = Math.max(1, window.devicePixelRatio||1)
@@ -36,17 +34,58 @@ document.addEventListener('DOMContentLoaded', () => {
     c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)
   }
 
+  function roundedRect(ctx, x, y, w, h, r){
+    ctx.beginPath()
+    ctx.moveTo(x+r, y)
+    ctx.arcTo(x+w, y, x+w, y+h, r)
+    ctx.arcTo(x+w, y+h, x, y+h, r)
+    ctx.arcTo(x, y+h, x, y, r)
+    ctx.arcTo(x, y, x+w, y, r)
+    ctx.closePath()
+  }
+
   function drawSpark(sym){
     const el = document.querySelector(`[data-sym="${sym}"] .spark`)
     const data = sparks[sym]; if(!el || !data?.length) return
     scaleCanvas(el)
-    const w = el.clientWidth||160, h = el.clientHeight||46, ctx = el.getContext('2d')
-    ctx.clearRect(0,0,w,h)
+    const ctx = el.getContext('2d')
+    const W = el.clientWidth||160, H = el.clientHeight||46
+    ctx.clearRect(0,0,W,H)
+
+    const pad = 6
+    const innerW = W - pad*2
+    const innerH = H - pad*2
+
     const min = Math.min(...data), max = Math.max(...data), span=(max-min)||1
-    ctx.lineWidth = 2; ctx.beginPath()
-    data.forEach((v,i)=>{ const x=i/(data.length-1)*w, y=h-((v-min)/span)*h; i?ctx.lineTo(x,y):ctx.moveTo(x,y) })
-    const up = data.at(-1)>=data[0]
-    ctx.strokeStyle = up ? getComputedStyle(document.documentElement).getPropertyValue('--up').trim() : getComputedStyle(document.documentElement).getPropertyValue('--down').trim()
+
+    const bgGrad = ctx.createLinearGradient(0, pad, 0, H-pad)
+    const css = getComputedStyle(document.documentElement)
+    const upc = css.getPropertyValue('--up').trim() || '#22c55e'
+    const downc = css.getPropertyValue('--down').trim() || '#ef4444'
+    const mixTop = data.at(-1)>=data[0] ? upc : downc
+    bgGrad.addColorStop(0, mixTop+'22')
+    bgGrad.addColorStop(1, '#00000000')
+
+    roundedRect(ctx, pad, pad, innerW, innerH, 10)
+    ctx.save()
+    ctx.clip()
+    ctx.fillStyle = bgGrad
+    ctx.fillRect(pad, pad, innerW, innerH)
+
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    data.forEach((v,i)=>{
+      const x = pad + (i/(data.length-1))*innerW
+      const y = pad + (innerH - ((v-min)/span)*innerH)
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y)
+    })
+    ctx.strokeStyle = mixTop
+    ctx.stroke()
+    ctx.restore()
+
+    ctx.strokeStyle = 'rgba(0,0,0,.07)'
+    ctx.lineWidth = 1
+    roundedRect(ctx, pad+.5, pad+.5, innerW-1, innerH-1, 10)
     ctx.stroke()
   }
 
