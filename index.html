@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cripto Studio — Precios en vivo</title>
+  <link href="styles.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="nav">
+    <div class="nav__left">
+      <div class="logo">₿</div>
+      <div class="brand">
+        <h1>Cripto Studio</h1>
+        <span class="sub">Precios en vivo</span>
+      </div>
+    </div>
+    <div class="nav__right">
+      <button id="theme-btn" class="btn btn--ghost" aria-label="Cambiar tema">Tema</button>
+      <button id="reconnect-btn" class="btn btn--ghost" aria-label="Refrescar datos">Refrescar</button>
+    </div>
+  </header>
+
+  <section class="toolbar">
+    <div class="row">
+      <div class="group">
+        <input id="symbol-input" class="input" type="text" placeholder="Agregar símbolo (ej: ada, doge, arb)" aria-label="Agregar símbolo">
+        <button id="add-btn" class="btn btn--primary" aria-label="Agregar">Agregar</button>
+      </div>
+      <div class="group">
+        <input id="filter-input" class="input" type="text" placeholder="Filtrar símbolos…" aria-label="Filtrar símbolos">
+        <div class="fiat-wrap">
+          <select id="fiat" class="select" aria-label="Moneda">
+            <option value="USD" selected>USD</option>
+            <option value="EUR">EUR</option>
+            <option value="ARS">ARS</option>
+          </select>
+          <span id="fx-badge" class="fx-badge" aria-live="polite">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="row meta">
+      <span>Fuente: <b id="source-name">Modo seguro (REST)</b> · Comparador: Binance · KuCoin · Kraken</span>
+      <span id="status" class="status" aria-live="polite">Iniciando…</span>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="kpis">
+      <div class="kpi"><div class="kpi__label">BTC 24h Vol (Binance)</div><div id="kpi-btc-vol" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">ETH 24h Vol (Binance)</div><div id="kpi-eth-vol" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">Fear & Greed</div><div id="kpi-fng" class="kpi__value">—</div></div>
+      <div class="kpi"><div class="kpi__label">1 USD en</div><div id="fx" class="kpi__value">—</div></div>
+    </section>
+
+    <section class="panel">
+      <div id="grid" class="grid"></div>
+      <p id="empty-hint" class="empty">Sin símbolos. Agregá alguno arriba.</p>
+    </section>
+  </main>
+
+  <script defer src="app.js"></script>
+</body>
+</html>
