@@ -1,0 +1,68 @@
+:root{
+  --bg:#0f172a; --ink:#0b1324; --text:#e2e8f0; --muted:#94a3b8;
+  --card:#0b1324; --border:#1e293b; --brand:#60a5fa; --up:#22c55e; --down:#ef4444;
+  --ring:rgba(96,165,250,.28); --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+:root[data-theme="light"]{
+  --bg:#f7f9fc; --ink:#ffffff; --text:#0f172a; --muted:#64748b;
+  --card:#ffffff; --border:#e6edf7; --brand:#2563eb; --up:#16a34a; --down:#dc2626;
+  --ring:rgba(37,99,235,.18); --shadow:0 10px 30px rgba(2,6,23,.06);
+}
+*{box-sizing:border-box}
+html,body{height:100%; min-height:100dvh}
+body{
+  margin:0; font-family:'Inter',system-ui,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text);
+  background-image: radial-gradient(1200px 800px at 10% -10%, rgba(96,165,250,.25), transparent 60%),
+                    radial-gradient(1000px 700px at 110% 10%, rgba(34,197,94,.18), transparent 60%),
+                    radial-gradient(900px 700px at 50% 110%, rgba(244,114,182,.16), transparent 60%);
+  background-attachment: fixed;
+}
+
+.nav{position:sticky; top:0; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 18px; border-bottom:1px solid var(--border); backdrop-filter:blur(8px); z-index:10;
+  background:linear-gradient(180deg, color-mix(in oklab, var(--bg) 70%, #000 30%), transparent);
+}
+.brand{font-weight:700; letter-spacing:.3px}
+.actions{display:flex; gap:8px; align-items:center}
+select, .ghost, .primary, .input{border:1px solid var(--border); background:var(--ink); color:var(--text); border-radius:12px; padding:10px 12px; font-weight:600}
+.ghost{background:transparent}
+.primary{background:var(--brand); color:#fff; border-color:transparent}
+select:focus,.ghost:focus,.primary:focus,.input:focus{outline:none; box-shadow:0 0 0 4px var(--ring)}
+
+.wrap{max-width:1100px; margin:0 auto; padding:16px 18px 80px}
+.top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px}
+.fx{font-weight:700; color:var(--muted)}
+.status{font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:var(--ink)}
+
+.grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{
+  background:linear-gradient(180deg, color-mix(in oklab, var(--card) 92%, var(--brand) 8%), var(--card));
+  border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow); display:grid; gap:12px;
+  overflow:hidden; position:relative;
+}
+.head{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.sym{font-weight:700; letter-spacing:.3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.badge{font-size:12px; padding:4px 8px; border-radius:999px; color:#fff}
+.up{background:var(--up)} .down{background:var(--down)}
+.price{font-size:34px; font-weight:700}
+.row{display:flex; gap:12px; justify-content:space-between; align-items:flex-end}
+.meta{font-size:12px; color:var(--muted); text-align:right}
+.spark{width:100%; height:auto; aspect-ratio:3.6/1; display:block; border-radius:10px}
+.x{ position:absolute; top:8px; right:8px; border:1px solid var(--border); background:transparent; color:var(--text);
+    border-radius:999px; width:30px; height:30px; display:grid; place-items:center; cursor:pointer; backdrop-filter:blur(6px);
+    background: color-mix(in oklab, var(--card) 92%, #000 8%); }
+.x:focus{ outline:none; box-shadow:0 0 0 4px var(--ring) }
+
+.empty{text-align:center; color:var(--muted); margin:40px 0; display:none}
+
+.fab{position:fixed; right:18px; bottom:18px; width:56px; height:56px; border-radius:16px;
+  background:var(--brand); color:#fff; border:none; font-size:24px; font-weight:700; box-shadow:var(--shadow); cursor:pointer}
+.dlg{border:none; border-radius:16px; padding:18px; background:var(--ink); color:var(--text)}
+.dlg::backdrop{background:rgba(0,0,0,.35)}
+.dlg-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
+
+@media (max-width:420px){ .price{font-size:30px} }
+
+/* Fix: reservar espacio para la X y separar del badge */
+.card .head{ padding-right: 44px; }
+.card .badge{ margin-right: 6px; }
