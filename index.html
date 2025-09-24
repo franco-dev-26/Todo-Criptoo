@@ -8,11 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0b57d0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
   <header class="nav">
@@ -22,7 +17,6 @@
         <option value="USD">USD</option>
         <option value="EUR">EUR</option>
         <option value="ARS">ARS</option>
-        <option value="CLP">CLP</option>
       </select>
       <button id="tools-btn" class="ghost" aria-label="Herramientas">Herramientas</button>
       <button id="theme" aria-label="Tema" class="ghost">Tema</button>
@@ -36,28 +30,17 @@
         <button id="tools-close" class="x" aria-label="Cerrar">✕</button>
       </div>
 
-      <section class="tool" id="tool-converter">
-        <h4>Conversor</h4>
+      <section class="tool">
+        <h4>Conversor rápido</h4>
         <div class="row inputs">
-          <input id="conv-amount" class="input" type="text" inputmode="decimal" placeholder="Monto">
-          <select id="conv-from" class="input" aria-label="De">
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="ARS">ARS</option>
-            <option value="CLP">CLP</option>
-          </select>
-          <button id="conv-swap" class="ghost" aria-label="Invertir">↔︎</button>
-          <select id="conv-to" class="input" aria-label="A">
-            <option value="ARS">ARS</option>
-            <option value="CLP">CLP</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-          </select>
+          <input id="fx-usd" class="input" type="number" step="any" placeholder="USD">
         </div>
         <div class="kpi-line">
-          <div class="kpi-chip"><span>Resultado</span><b id="conv-result">—</b></div>
+          <div class="kpi-chip"><span>EUR</span><b id="fx-eur">—</b></div>
+          <div class="kpi-chip"><span>ARS</span><b id="fx-ars">—</b></div>
         </div>
       </section>
+
 
       <section class="tool">
         <h4>Ganancia / Pérdida</h4>
@@ -86,6 +69,8 @@
           <div class="kpi-chip"><span>Tamaño</span><b id="ps-size">—</b></div>
         </div>
       </section>
+
+      
     </div>
   </aside>
 
@@ -131,18 +116,9 @@
     <span class="made">San ROQUE Mendoza, Argentina</span>
     <span class="dot">•</span>
     <span class="by">FrancoDev</span>
-    <span class="dot">•</span>
-    <span class="copy">© <span id="copy-year">2025</span> FrancoDev</span>
   </div>
 </footer>
 
   <script defer src="app.js"></script>
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    });
-  }
-  </script>
 </body>
 </html>
