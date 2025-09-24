@@ -181,6 +181,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }catch{}
   }
 
+  async function loadDolaresAR(){
+    try{
+      const r = await fetch('https://dolarapi.com/v1/dolares');
+      if(!r.ok) throw 0;
+      const j = await r.json();
+      const get = k => {
+        const m = j.find(d => (d.casa||'').toLowerCase() === k);
+        const v = m && (m.venta ?? m.valor_venta ?? m.valor ?? m.venta_promedio);
+        return (v==null || isNaN(+v)) ? null : +v;
+      };
+      const fmtPeso = n => (n==null) ? '—' : new Intl.NumberFormat('es-AR',{maximumFractionDigits:2}).format(n);
+
+      const oficial = fmtPeso(get('oficial'));
+      const blue    = fmtPeso(get('blue'));
+      const mep     = fmtPeso(get('mep'));
+      const tarjeta = fmtPeso(get('tarjeta'));
+
+      const el = document.getElementById('fx-ar');
+      if(el){
+        el.textContent = `🇦🇷 Oficial $${oficial} · Blue $${blue} · MEP $${mep} · Tarjeta $${tarjeta}`;
+      }
+    }catch{
+      const el = document.getElementById('fx-ar');
+      if(el) el.textContent = '—';
+    }
+  }
+
   // --- Conversor general (en Herramientas) ---
   function bindGeneralConverter(){
     function parseAmountLocal(raw){
@@ -261,6 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
     startPolling()
     tickMarket()
     clearInterval(marketTimer); marketTimer=setInterval(tickMarket, 60000)
+    // refrescar cotizaciones AR cada 3 min
+    try{ clearInterval(arTimer) }catch{}
+    var arTimer = setInterval(loadDolaresAR, 180000)
     window.addEventListener('resize',()=> symbols.forEach(drawSpark))
   }catch{ statusBox.textContent='Fallo al iniciar' }
 })
