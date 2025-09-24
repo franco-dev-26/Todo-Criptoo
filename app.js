@@ -207,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const v = parseFloat(s);
       return isNaN(v) ? 0 : v;
-    })
-    
+    }
+
     const amount = document.getElementById('conv-amount')
     const from = document.getElementById('conv-from')
     const to = document.getElementById('conv-to')
