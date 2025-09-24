@@ -184,18 +184,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Conversor general (en Herramientas) ---
   function bindGeneralConverter(){
     function parseAmountLocal(raw){
-      if(raw==null) return 0
-      let s = String(raw).trim()
-      if(!s) return 0
-      s = s.replace(/\s+/g,'')
-      if(s.includes('.') && s.includes(',')){
-        s = s.replace(/\./g,'').replace(',', '.')
-      }else if(s.includes(',')){
-        s = s.replace(',', '.')
+      if(raw==null) return 0;
+      let s = String(raw).trim();
+      if(!s) return 0;
+      s = s.replace(/\s+/g,''); // quitar espacios
+
+      // Formato AR: 100.000,50 -> quitar puntos (miles) y usar coma como decimal
+      if(/\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)){
+        s = s.replace(/\./g,'');
+        if(s.includes(',')) s = s.replace(',', '.');
+      }else if(/\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)){
+        // Formato anglo: 100,000.50 -> quitar comas (miles), dejar punto decimal
+        s = s.replace(/,/g,'');
+      }else{
+        // Si solo hay coma, tomarla como decimal. Si hay muchas comas, asumir miles y quitarlas.
+        if(s.includes(',') && !s.includes('.')){
+          s = s.replace(',', '.');
+        }else if((s.match(/,/g)||[]).length>1){
+          s = s.replace(/,/g,'');
+        }
       }
-      const v = parseFloat(s)
-      return isNaN(v) ? 0 : v
-    }
+
+      const v = parseFloat(s);
+      return isNaN(v) ? 0 : v;
+    })
+    
     const amount = document.getElementById('conv-amount')
     const from = document.getElementById('conv-from')
     const to = document.getElementById('conv-to')
