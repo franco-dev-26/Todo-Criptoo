@@ -182,25 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Conversor general (en Herramientas) ---
-  async function loadDolaresAR(){
-    try{
-      const r = await fetch('https://dolarapi.com/v1/dolares');
-      if(!r.ok) throw 0;
-      const j = await r.json();
-      const pick = (k) => {
-        const it = j.find(d => (d.casa||'').toLowerCase()===k);
-        const v = it && (it.venta ?? it.valor_venta ?? it.valor ?? it.venta_promedio);
-        return (v==null||isNaN(+v)) ? null : +v;
-      };
-      const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
-      const oficial = pick('oficial'), blue = pick('blue'), mep = pick('mep'), tarjeta = pick('tarjeta');
-      const el = document.getElementById('fx-ar');
-      if(el) el.textContent = `🇦🇷 Oficial $${oficial!=null?nf.format(oficial):'—'} · Blue $${blue!=null?nf.format(blue):'—'} · MEP $${mep!=null?nf.format(mep):'—'} · Tarjeta $${tarjeta!=null?nf.format(tarjeta):'—'}`;
-    }catch{
-      const el = document.getElementById('fx-ar'); if(el) el.textContent='—';
-    }
-  }
-
   function bindGeneralConverter(){
     function parseAmountLocal(raw){
       if(raw==null) return 0;
@@ -280,8 +261,38 @@ document.addEventListener('DOMContentLoaded', () => {
     startPolling()
     tickMarket()
     clearInterval(marketTimer); marketTimer=setInterval(tickMarket, 60000)
-    try{ clearInterval(arTimer) }catch{}
-    var arTimer = setInterval(loadDolaresAR, 180000)
     window.addEventListener('resize',()=> symbols.forEach(drawSpark))
   }catch{ statusBox.textContent='Fallo al iniciar' }
 })
+
+
+
+async function loadDolaresAR(){
+  const el = document.getElementById('fx-ar');
+  if(el) el.textContent = '—'; // estado por defecto
+  try{
+    const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
+    async function get(slug){
+      try{
+        const r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`, {mode:'cors'});
+        if(!r.ok) throw 0;
+        const j = await r.json();
+        const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
+        return (v==null||isNaN(+v)) ? null : +v;
+      }catch(e){
+        console.warn('falló', slug, e);
+        return null;
+      }
+    }
+    const [oficial, blue, mep, tarjeta] = await Promise.all([
+      get('oficial'), get('blue'), get('mep'), get('tarjeta')
+    ]);
+    if(el){
+      el.textContent = `🇦🇷 Oficial $${oficial!=null?nf.format(oficial):'—'} · Blue $${blue!=null?nf.format(blue):'—'} · MEP $${mep!=null?nf.format(mep):'—'} · Tarjeta $${tarjeta!=null?nf.format(tarjeta):'—'}`;
+    }
+  }catch(err){
+    console.error('Error loadDolaresAR', err);
+    if(el) el.textContent = '—';
+  }
+}
+
