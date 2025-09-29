@@ -223,10 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
     update()
   }
 
-  // 🔹 COTIZACIONES DÓLAR ARG (solo muestra si hay valor real)
+  //dolar//
 async function loadDolaresAR(){
   const el = document.getElementById('fx-ar');
-  if(el) el.textContent = '—';
+  if(el) el.innerHTML = '—';
   try{
     const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
     async function get(slug, fallbackSlug=null){
@@ -251,16 +251,15 @@ async function loadDolaresAR(){
     ]);
 
     if(el){
-      let parts = [];
-      if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
-      if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
-      if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
-      if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
-      el.textContent = parts.length ? parts.join(" · ") : "—";
+      let html = "<div>🇦🇷</div>"; // bandera arriba como título
+      if(oficial!=null) html += `<div>Oficial $${nf.format(oficial)}</div>`;
+      if(blue!=null)    html += `<div>Blue $${nf.format(blue)}</div>`;
+      if(mep!=null)     html += `<div>MEP $${nf.format(mep)}</div>`;
+      if(tarjeta!=null) html += `<div>Tarjeta $${nf.format(tarjeta)}</div>`;
+      el.innerHTML = html || "—";
     }
-  }catch{ if(el) el.textContent = '—'; }
+  }catch{ if(el) el.innerHTML = '—'; }
 }
-
 
   // 🔹 Eventos
   themeBtn.addEventListener('click',()=>{
