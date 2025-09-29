@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureUI()
     bindGeneralConverter()
     loadFX()
+    loadDolaresAR()
     tick()
     startPolling()
     tickMarket()
