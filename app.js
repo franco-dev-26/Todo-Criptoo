@@ -251,24 +251,15 @@ async function loadDolaresAR(){
     ]);
 
     if(el){
-      let parts = ["🇦🇷"];
+      let parts = [];
       if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
       if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
       if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
       if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
-      el.textContent = parts.length > 1 ? parts.join(" · ") : "—";
+      el.textContent = parts.length ? parts.join(" · ") : "—";
     }
   }catch{ if(el) el.textContent = '—'; }
 }
-
-function startPolling(){ 
-  clearInterval(timer); 
-  timer=setInterval(tick, baseMs) 
-}
-document.addEventListener('visibilitychange',()=>{
-  baseMs = document.hidden ? 8000 : 3000; 
-  startPolling() 
-})
 
 
   // 🔹 Eventos
