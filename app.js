@@ -170,7 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = parseFloat(m.priceChangePercent||'0')
         return `<div class="row"><span class="sym">${sym}</span><span class="p">${p.toFixed(2)}%</span></div>`
       }).join('')
-    }catch{}
+    }catch(e){
+      console.error("Error tickMarket:",e)
+      heat.innerHTML = "<p>Error al cargar mercado</p>"
+      gainersEl.innerHTML = ""
+      losersEl.innerHTML = ""
+    }
   }
 
   async function loadFX(){
@@ -223,43 +228,52 @@ document.addEventListener('DOMContentLoaded', () => {
     update()
   }
 
-  //dolar//
-async function loadDolaresAR(){
-  const el = document.getElementById('fx-ar');
-  if(el) el.innerHTML = '—';
-  try{
-    const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
-    async function get(slug, fallbackSlug=null){
-      try{
-        let r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`);
-        if(!r.ok && fallbackSlug){
-          r = await fetch(`https://dolarapi.com/v1/dolares/${fallbackSlug}`);
-        }
-        if(!r.ok) throw 0;
-        const j = await r.json();
-        const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
-        return (v==null||isNaN(+v)) ? null : +v;
-      }catch{ return null; }
-    }
+  // 🔹 COTIZACIONES DÓLAR ARG
+  async function loadDolaresAR(){
+    const el = document.getElementById('fx-ar');
+    if(el) el.textContent = '—';
+    try{
+      const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
+      async function get(slug, fallbackSlug=null){
+        try{
+          let r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`);
+          if(!r.ok && fallbackSlug){
+            r = await fetch(`https://dolarapi.com/v1/dolares/${fallbackSlug}`);
+          }
+          if(!r.ok) throw 0;
+          const j = await r.json();
+          const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
+          return (v==null||isNaN(+v)) ? null : +v;
+        }catch{ return null; }
+      }
 
-    // 👇 mep tiene fallback a bolsa
-    const [oficial, blue, mep, tarjeta] = await Promise.all([
-      get('oficial'),
-      get('blue'),
-      get('mep','bolsa'),
-      get('tarjeta')
-    ]);
+      // mep tiene fallback a bolsa
+      const [oficial, blue, mep, tarjeta] = await Promise.all([
+        get('oficial'),
+        get('blue'),
+        get('mep','bolsa'),
+        get('tarjeta')
+      ]);
 
-    if(el){
-      let html = "<div>🇦🇷</div>"; // bandera arriba como título
-      if(oficial!=null) html += `<div>Oficial $${nf.format(oficial)}</div>`;
-      if(blue!=null)    html += `<div>Blue $${nf.format(blue)}</div>`;
-      if(mep!=null)     html += `<div>MEP $${nf.format(mep)}</div>`;
-      if(tarjeta!=null) html += `<div>Tarjeta $${nf.format(tarjeta)}</div>`;
-      el.innerHTML = html || "—";
-    }
-  }catch{ if(el) el.innerHTML = '—'; }
-}
+      if(el){
+        let parts = [];
+        if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
+        if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
+        if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
+        if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
+        el.textContent = parts.length ? parts.join(" · ") : "—";
+      }
+    }catch{ if(el) el.textContent = '—'; }
+  }
+
+  function startPolling(){ 
+    clearInterval(timer); 
+    timer=setInterval(tick, baseMs) 
+  }
+  document.addEventListener('visibilitychange',()=>{
+    baseMs = document.hidden ? 8000 : 3000; 
+    startPolling() 
+  })
 
   // 🔹 Eventos
   themeBtn.addEventListener('click',()=>{
