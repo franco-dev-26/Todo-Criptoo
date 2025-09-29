@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let state = {}
   let sparks = {}
   let fx = { USD:1, EUR:1, ARS:1, CLP:1 }
-  let timer=null, baseMs=3000, marketTimer=null
+  let timer=null, baseMs=3000, marketTimer=null, dolarTimer=null
 
   const nf0 = new Intl.NumberFormat('es-AR',{maximumFractionDigits:0})
   const nf2 = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2})
@@ -181,34 +181,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }catch{}
   }
 
-  // --- Conversor general (en Herramientas) ---
+  // 🔹 Conversor en Herramientas
   function bindGeneralConverter(){
     function parseAmountLocal(raw){
       if(raw==null) return 0;
       let s = String(raw).trim();
       if(!s) return 0;
-      s = s.replace(/\s+/g,''); // quitar espacios
-
-      // Formato AR: 100.000,50 -> quitar puntos (miles) y usar coma como decimal
+      s = s.replace(/\s+/g,'');
       if(/\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)){
         s = s.replace(/\./g,'');
         if(s.includes(',')) s = s.replace(',', '.');
       }else if(/\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)){
-        // Formato anglo: 100,000.50 -> quitar comas (miles), dejar punto decimal
         s = s.replace(/,/g,'');
       }else{
-        // Si solo hay coma, tomarla como decimal. Si hay muchas comas, asumir miles y quitarlas.
         if(s.includes(',') && !s.includes('.')){
           s = s.replace(',', '.');
         }else if((s.match(/,/g)||[]).length>1){
           s = s.replace(/,/g,'');
         }
       }
-
       const v = parseFloat(s);
       return isNaN(v) ? 0 : v;
     }
-
     const amount = document.getElementById('conv-amount')
     const from = document.getElementById('conv-from')
     const to = document.getElementById('conv-to')
@@ -229,9 +223,34 @@ document.addEventListener('DOMContentLoaded', () => {
     update()
   }
 
+  // 🔹 COTIZACIONES DÓLAR ARG
+  async function loadDolaresAR(){
+    const el = document.getElementById('fx-ar');
+    if(el) el.textContent = '—';
+    try{
+      const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
+      async function get(slug){
+        try{
+          const r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`);
+          if(!r.ok) throw 0;
+          const j = await r.json();
+          const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
+          return (v==null||isNaN(+v)) ? null : +v;
+        }catch{ return null; }
+      }
+      const [oficial, blue, mep, tarjeta] = await Promise.all([
+        get('oficial'), get('blue'), get('mep'), get('tarjeta')
+      ]);
+      if(el){
+        el.textContent = `🇦🇷 Oficial $${oficial!=null?nf.format(oficial):'—'} · Blue $${blue!=null?nf.format(blue):'—'} · MEP $${mep!=null?nf.format(mep):'—'} · Tarjeta $${tarjeta!=null?nf.format(tarjeta):'—'}`;
+      }
+    }catch{ if(el) el.textContent = '—'; }
+  }
+
   function startPolling(){ clearInterval(timer); timer=setInterval(tick, baseMs) }
   document.addEventListener('visibilitychange',()=>{ baseMs = document.hidden ? 8000 : 3000; startPolling() })
 
+  // 🔹 Eventos
   themeBtn.addEventListener('click',()=>{
     const html=document.documentElement; const next=html.getAttribute('data-theme')==='dark'?'light':'dark'
     html.setAttribute('data-theme',next); localStorage.setItem('theme',next); symbols.forEach(drawSpark)
@@ -246,13 +265,14 @@ document.addEventListener('DOMContentLoaded', () => {
     dlg.close()
   })
   symbolIn.addEventListener('keydown',e=>{ if(e.key==='Enter') addok.click() })
-
   toolsBtn.addEventListener('click',()=> tools.classList.toggle('open'))
   toolsClose.addEventListener('click',()=> tools.classList.remove('open'))
   tools.addEventListener('click',e=>{ if(e.target===tools) tools.classList.remove('open') })
 
+  // 🔹 Inicialización
   try{
-    const theme = localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme', theme)
+    const theme = localStorage.getItem('theme')||'light'
+    document.documentElement.setAttribute('data-theme', theme)
     symbols.forEach(card)
     ensureUI()
     bindGeneralConverter()
@@ -262,38 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startPolling()
     tickMarket()
     clearInterval(marketTimer); marketTimer=setInterval(tickMarket, 60000)
+    clearInterval(dolarTimer); dolarTimer=setInterval(loadDolaresAR, 60000) // refresco cada min
     window.addEventListener('resize',()=> symbols.forEach(drawSpark))
   }catch{ statusBox.textContent='Fallo al iniciar' }
 })
-
-
-
-async function loadDolaresAR(){
-  const el = document.getElementById('fx-ar');
-  if(el) el.textContent = '—'; // estado por defecto
-  try{
-    const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
-    async function get(slug){
-      try{
-        const r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`, {mode:'cors'});
-        if(!r.ok) throw 0;
-        const j = await r.json();
-        const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
-        return (v==null||isNaN(+v)) ? null : +v;
-      }catch(e){
-        console.warn('falló', slug, e);
-        return null;
-      }
-    }
-    const [oficial, blue, mep, tarjeta] = await Promise.all([
-      get('oficial'), get('blue'), get('mep'), get('tarjeta')
-    ]);
-    if(el){
-      el.textContent = `🇦🇷 Oficial $${oficial!=null?nf.format(oficial):'—'} · Blue $${blue!=null?nf.format(blue):'—'} · MEP $${mep!=null?nf.format(mep):'—'} · Tarjeta $${tarjeta!=null?nf.format(tarjeta):'—'}`;
-    }
-  }catch(err){
-    console.error('Error loadDolaresAR', err);
-    if(el) el.textContent = '—';
-  }
-}
-
