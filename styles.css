@@ -214,3 +214,21 @@ select:focus,.ghost:focus,.primary:focus,.input:focus{outline:none; box-shadow:0
 }
 .nav{ padding-top: max(10px, env(safe-area-inset-top)); }
 .site-footer{ padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+
+#fx, #fx-ar {
+  display: block;
+  text-align: center;
+  font-weight: 600;
+}
+
+#fx {
+  margin-bottom: 6px; 
+}
+
+#status {
+  display: block;
+  text-align: center;
+  margin: 8px 0;     
+  font-weight: 700;
+  font-size: 0.95rem;
+}
