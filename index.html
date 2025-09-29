@@ -15,85 +15,134 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
-  <header>
-    <h1>📊 Estadísticas</h1>
-    <button id="theme">🌗</button>
+  <header class="nav">
+    <div class="brand">Estadisticas</div>
+    <div class="actions">
+      <select id="fiat" aria-label="Moneda">
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="ARS">ARS</option>
+        <option value="CLP">CLP</option>
+      </select>
+      <button id="tools-btn" class="ghost" aria-label="Herramientas">Herramientas</button>
+      <button id="theme" aria-label="Tema" class="ghost">Tema</button>
+    </div>
   </header>
 
-  <main>
-    <section id="status">Cargando…</section>
+  <aside id="tools" class="tools">
+    <div class="tools__inner">
+      <div class="tools__head">
+        <h3>Calculadoras</h3>
+        <button id="tools-close" class="x" aria-label="Cerrar">✕</button>
+      </div>
 
-    <section id="fx"></section>
-    <section id="fx-ar"></section>
+      <section class="tool" id="tool-converter">
+        <h4>Conversor</h4>
+        <div class="row inputs">
+          <input id="conv-amount" class="input" type="text" inputmode="decimal" placeholder="Monto">
+          <select id="conv-from" class="input" aria-label="De">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="ARS">ARS</option>
+            <option value="CLP">CLP</option>
+          </select>
+          <button id="conv-swap" class="ghost" aria-label="Invertir">↔︎</button>
+          <select id="conv-to" class="input" aria-label="A">
+            <option value="ARS">ARS</option>
+            <option value="CLP">CLP</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+        <div class="kpi-line">
+          <div class="kpi-chip"><span>Resultado</span><b id="conv-result">—</b></div>
+        </div>
+      </section>
 
-    <div id="grid"></div>
-    <div id="empty">Agregá un símbolo con +</div>
+      <section class="tool">
+        <h4>Ganancia / Pérdida</h4>
+        <div class="row inputs">
+          <input id="pl-entry" class="input" type="number" step="any" placeholder="Entrada">
+          <input id="pl-exit" class="input" type="number" step="any" placeholder="Salida">
+          <input id="pl-size" class="input" type="number" step="any" placeholder="Cantidad">
+          <input id="pl-fee" class="input" type="number" step="any" placeholder="Fee % (opcional)">
+        </div>
+        <div class="kpi-line">
+          <div class="kpi-chip"><span>Resultado</span><b id="pl-result">—</b></div>
+          <div class="kpi-chip"><span>Variación</span><b id="pl-change">—</b></div>
+        </div>
+      </section>
 
-    <button id="add">＋</button>
+      <section class="tool">
+        <h4>Tamaño de posición</h4>
+        <div class="row inputs">
+          <input id="ps-capital" class="input" type="number" step="any" placeholder="Capital">
+          <input id="ps-risk" class="input" type="number" step="any" placeholder="Riesgo %">
+          <input id="ps-entry" class="input" type="number" step="any" placeholder="Entrada">
+          <input id="ps-stop" class="input" type="number" step="any" placeholder="Stop">
+        </div>
+        <div class="kpi-line">
+          <div class="kpi-chip"><span>Riesgo $</span><b id="ps-risk$">—</b></div>
+          <div class="kpi-chip"><span>Tamaño</span><b id="ps-size">—</b></div>
+        </div>
+      </section>
+    </div>
+  </aside>
 
-    <dialog id="adddlg">
-      <h2>Agregar símbolo</h2>
-      <input id="symbol" placeholder="BTCUSDT">
-      <menu>
-        <button id="addcancel">Cancelar</button>
-        <button id="addok">OK</button>
-      </menu>
-    </dialog>
+ <main class="wrap">
+    <div class="top">
+      <div id="fx" class="fx">—</div>
+      <div id="status" class="status" aria-live="polite">Listo</div>
+      <div id="fx-ar" class="fx">—</div>
+    </div>
 
-    <section id="heat"></section>
-
-    <section class="tools" id="tools">
-      <div class="tools-inner">
-        <button id="tools-close">✕</button>
-        <h2>Herramientas</h2>
-
-        <h3>Conversor</h3>
-        <input id="conv-amount" placeholder="Monto">
-        <select id="conv-from">
-          <option value="USD">USD</option>
-          <option value="ARS">ARS</option>
-          <option value="EUR">EUR</option>
-          <option value="CLP">CLP</option>
-        </select>
-        →
-        <select id="conv-to">
-          <option value="ARS">ARS</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="CLP">CLP</option>
-        </select>
-        <div id="conv-result">—</div>
-        <button id="conv-swap">⇆</button>
-
-        <h3>Ganancia/Pérdida</h3>
-        <label>Precio compra <input id="pl-buy" type="number"></label>
-        <label>Precio venta <input id="pl-sell" type="number"></label>
-        <label>Cantidad <input id="pl-qty" type="number"></label>
-        <div id="pl-result">—</div>
-
-        <h3>Tamaño de posición</h3>
-        <label>Capital <input id="pos-capital" type="number"></label>
-        <label>Riesgo (%) <input id="pos-risk" type="number"></label>
-        <label>Stop Loss (%) <input id="pos-sl" type="number"></label>
-        <div id="pos-result">—</div>
+    <section class="market">
+      <h3>Hoy en el mercado</h3>
+      <div class="heat" id="heat"></div>
+      <div class="mov">
+        <div class="mov__col">
+          <h4>Top Subidas</h4>
+          <div id="gainers" class="list"></div>
+        </div>
+        <div class="mov__col">
+          <h4>Top Bajas</h4>
+          <div id="losers" class="list"></div>
+        </div>
       </div>
     </section>
-    <button id="tools-btn">🛠</button>
 
-    <section>
-      <h2>Hoy en el mercado</h2>
-      <div id="heat"></div>
-      <h3>Top subidas</h3>
-      <div id="gainers"></div>
-      <h3>Top bajas</h3>
-      <div id="losers"></div>
+    <section class="panel">
+      <div id="grid" class="grid"></div>
+      <p id="empty" class="empty">Sin símbolos. Tocá + para agregar.</p>
     </section>
   </main>
 
-  <footer>
-    <p>San Roque - Mendoza - Argentina</p>
-  </footer>
+  <button id="add" class="fab" aria-label="Agregar">＋</button>
+  <dialog id="adddlg" class="dlg">
+    <h3>Agregar símbolo</h3>
+    <input id="symbol" class="input" placeholder="ej: btc, eth, sol">
+    <div class="dlg-actions">
+      <button id="addok" class="primary">Agregar</button>
+      <button id="addcancel" class="ghost">Cancelar</button>
+    </div>
+  </dialog>
 
-  <script src="app.js"></script>
+  <footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <span class="made">San Roque - Mendoza - Argentina</span>
+    <span class="dot">•</span>
+    <span class="by">FrancoDev</span>
+  </div>
+</footer>
+
+  <script defer src="app.js?v=ars5"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    });
+  }
+  </script>
 </body>
 </html>
+
