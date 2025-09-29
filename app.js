@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     update()
   }
 
-  // 🔹 COTIZACIONES DÓLAR ARG
+  // 🔹 COTIZACIONES DÓLAR ARG (solo muestra si hay valor real)
   async function loadDolaresAR(){
     const el = document.getElementById('fx-ar');
     if(el) el.textContent = '—';
@@ -242,7 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
         get('oficial'), get('blue'), get('mep'), get('tarjeta')
       ]);
       if(el){
-        el.textContent = `🇦🇷 Oficial $${oficial!=null?nf.format(oficial):'—'} · Blue $${blue!=null?nf.format(blue):'—'} · MEP $${mep!=null?nf.format(mep):'—'} · Tarjeta $${tarjeta!=null?nf.format(tarjeta):'—'}`;
+        let parts = ["🇦🇷"];
+        if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
+        if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
+        if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
+        if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
+        el.textContent = parts.join(" · ");
       }
     }catch{ if(el) el.textContent = '—'; }
   }
@@ -282,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startPolling()
     tickMarket()
     clearInterval(marketTimer); marketTimer=setInterval(tickMarket, 60000)
-    clearInterval(dolarTimer); dolarTimer=setInterval(loadDolaresAR, 60000) // refresco cada min
+    clearInterval(dolarTimer); dolarTimer=setInterval(loadDolaresAR, 60000) 
     window.addEventListener('resize',()=> symbols.forEach(drawSpark))
   }catch{ statusBox.textContent='Fallo al iniciar' }
 })
