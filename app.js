@@ -224,36 +224,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 🔹 COTIZACIONES DÓLAR ARG (solo muestra si hay valor real)
-  async function loadDolaresAR(){
-    const el = document.getElementById('fx-ar');
-    if(el) el.textContent = '—';
-    try{
-      const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
-      async function get(slug){
-        try{
-          const r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`);
-          if(!r.ok) throw 0;
-          const j = await r.json();
-          const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
-          return (v==null||isNaN(+v)) ? null : +v;
-        }catch{ return null; }
-      }
-      const [oficial, blue, mep, tarjeta] = await Promise.all([
-        get('oficial'), get('blue'), get('mep'), get('tarjeta')
-      ]);
-      if(el){
-        let parts = ["🇦🇷"];
-        if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
-        if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
-        if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
-        if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
-        el.textContent = parts.join(" · ");
-      }
-    }catch{ if(el) el.textContent = '—'; }
-  }
+async function loadDolaresAR(){
+  const el = document.getElementById('fx-ar');
+  if(el) el.textContent = '—';
+  try{
+    const nf = new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
+    async function get(slug, fallbackSlug=null){
+      try{
+        let r = await fetch(`https://dolarapi.com/v1/dolares/${slug}`);
+        if(!r.ok && fallbackSlug){
+          r = await fetch(`https://dolarapi.com/v1/dolares/${fallbackSlug}`);
+        }
+        if(!r.ok) throw 0;
+        const j = await r.json();
+        const v = j?.venta ?? j?.valor_venta ?? j?.valor ?? j?.venta_promedio;
+        return (v==null||isNaN(+v)) ? null : +v;
+      }catch{ return null; }
+    }
 
-  function startPolling(){ clearInterval(timer); timer=setInterval(tick, baseMs) }
-  document.addEventListener('visibilitychange',()=>{ baseMs = document.hidden ? 8000 : 3000; startPolling() })
+    // 👇 mep tiene fallback a bolsa
+    const [oficial, blue, mep, tarjeta] = await Promise.all([
+      get('oficial'),
+      get('blue'),
+      get('mep','bolsa'),
+      get('tarjeta')
+    ]);
+
+    if(el){
+      let parts = ["🇦🇷"];
+      if(oficial!=null) parts.push(`Oficial $${nf.format(oficial)}`);
+      if(blue!=null)    parts.push(`Blue $${nf.format(blue)}`);
+      if(mep!=null)     parts.push(`MEP $${nf.format(mep)}`);
+      if(tarjeta!=null) parts.push(`Tarjeta $${nf.format(tarjeta)}`);
+      el.textContent = parts.length > 1 ? parts.join(" · ") : "—";
+    }
+  }catch{ if(el) el.textContent = '—'; }
+}
+
+function startPolling(){ 
+  clearInterval(timer); 
+  timer=setInterval(tick, baseMs) 
+}
+document.addEventListener('visibilitychange',()=>{
+  baseMs = document.hidden ? 8000 : 3000; 
+  startPolling() 
+})
+
 
   // 🔹 Eventos
   themeBtn.addEventListener('click',()=>{
