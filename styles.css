@@ -215,20 +215,20 @@ select:focus,.ghost:focus,.primary:focus,.input:focus{outline:none; box-shadow:0
 .nav{ padding-top: max(10px, env(safe-area-inset-top)); }
 .site-footer{ padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 
-#fx, #fx-ar {
-  display: block;
-  text-align: center;
-  font-weight: 600;
+#fx-ar {
+  margin-top: 6px;
+  font-size: 0.95rem;   /* un poco más chico que la línea de arriba */
+  line-height: 1.6;     /* da aire entre renglones */
+  display: flex;
+  flex-direction: column; /* 👈 fuerza que cada cotización sea una fila */
+  gap: 2px;             /* espacio entre líneas */
 }
 
-#fx {
-  margin-bottom: 6px; 
+#fx-ar div {
+  padding: 2px 0;
+  border-bottom: 1px dashed rgba(0,0,0,0.1); /* línea separadora sutil */
 }
 
-#status {
-  display: block;
-  text-align: center;
-  margin: 8px 0;     
-  font-weight: 700;
-  font-size: 0.95rem;
+#fx-ar div:last-child {
+  border-bottom: none;  /* quitamos la última línea */
 }
